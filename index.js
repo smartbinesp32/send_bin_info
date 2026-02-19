@@ -1,22 +1,24 @@
-require('dotenv').config(); // Loads variables from .env file
+require('dotenv').config();
 const express = require('express');
 const nodemailer = require('nodemailer');
+const cors = require('cors'); // Added CORS
 
 const app = express();
 
-// Middleware to parse JSON bodies
+// Middleware
+app.use(cors()); // This allows your HTML file to "fetch" without errors
 app.use(express.json());
 
-// 1. Setup Transporter using Environment Variables
+// 1. Setup Transporter
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.EMAIL_USER, 
-    pass: process.env.EMAIL_PASS  // Use Gmail App Password here
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
   }
 });
 
-// 2. Health Check Route (Helps Render monitor your app)
+// 2. Health Check (Visit this in browser to wake up Render)
 app.get('/', (req, res) => {
   res.send('Bin Reminder Server is Live 🚀');
 });
@@ -25,7 +27,6 @@ app.get('/', (req, res) => {
 app.post('/send-email', (req, res) => {
   const { recipient, message } = req.body;
 
-  // Basic validation
   if (!recipient || !message) {
     return res.status(400).json({ error: 'Recipient and message are required.' });
   }
@@ -46,16 +47,15 @@ app.post('/send-email', (req, res) => {
 
   transporter.sendMail(mailOptions, (error, info) => {
     if (error) {
-      console.error('Error sending mail:', error);
+      console.error('Nodemailer Error:', error);
       return res.status(500).json({ success: false, error: error.message });
     }
-    console.log('Email sent: ' + info.response);
     res.status(200).json({ success: true, message: 'Email sent successfully!' });
   });
 });
 
-// 4. Use Render's Dynamic Port
+// 4. Port Configuration for Render
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`Server active on port ${PORT}`);
 });
